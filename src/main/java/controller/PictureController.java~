@@ -1,0 +1,127 @@
+package controller;
+
+import entity.Picture;
+import entity.PictureRepository;
+import org.apache.commons.io.FileUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+
+@RestController
+public class PictureController {
+    @Autowired
+    private PictureRepository pictureRepository;
+
+    @RequestMapping(value = "/picture/university/{uid}", method = RequestMethod.GET)
+    public List<Picture> fetchByUid(@PathVariable Long uid) {
+        return pictureRepository.findByUniversityId(uid);
+    }
+
+    @RequestMapping(value = "/picture/task/{tid}", method = RequestMethod.GET)
+    public List<Picture> fetchByTid(@PathVariable Long tid) {
+        return pictureRepository.findByTaskId(tid);
+    }
+
+    @RequestMapping(value = "/picture/view/{vid}", method = RequestMethod.GET)
+    public List<Picture> fetchByVid(@PathVariable Long vid) {
+        return pictureRepository.findByViewId(vid);
+    }
+
+    @RequestMapping(value = "/download/{name}/{type}", method = RequestMethod.GET)
+    public ResponseEntity<byte[]> getPicture(@PathVariable String name, @PathVariable String type)
+            throws IOException {
+        String filePath = "/home/rambot/Documents/MicroCampus_Spring/micro_campus_pictures/" + name + "." + type;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", new String(name.getBytes("gb2312"),
+                "iso-8859-1"));
+        File file = new File(filePath);
+        byte[] bytes = FileUtils.readFileToByteArray(file);
+
+        return new ResponseEntity<byte[]>(bytes, headers, HttpStatus.OK);
+    }
+
+    @RequestMapping("/picture/{name}/{type}")
+    public void getIcon(@PathVariable String name, @PathVariable String type,
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws IOException {
+
+        String filePath = "/home/rambot/Documents/MicroCampus_Spring/micro_campus_pictures/" + name + "." + type;
+
+        File file = new File(filePath);
+
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] data = new byte[(int)file.length()];
+        int length = inputStream.read(data);
+        inputStream.close();
+
+        response.setContentType("image/png");
+
+        OutputStream stream = response.getOutputStream();
+        stream.write(data);
+        stream.flush();
+        stream.close();
+    }
+
+    //获得用户的avatar的图片
+    @RequestMapping("/avatar/user/{uid}")
+    public void getAvatar(@PathVariable Long uid,
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws IOException {
+
+        int avatartNumber = 1 + (int)(uid % 6);
+        String fileName = "avatar" + String.valueOf(avatartNumber) + ".jpg";
+        String filePath = "/home/rambot/Documents/MicroCampus_Spring/micro_campus_pictures/" + fileName;
+
+        File file = new File(filePath);
+
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] data = new byte[(int)file.length()];
+        int length = inputStream.read(data);
+        inputStream.close();
+
+        response.setContentType("image/png");
+
+        OutputStream stream = response.getOutputStream();
+        stream.write(data);
+        stream.flush();
+        stream.close();
+    }
+
+    //get the picture of fog of one university
+    @RequestMapping("/fogPicture/university/{uid}")
+    public void getAvatar(@PathVariable Long uid,
+                        HttpServletRequest request,
+                        HttpServletResponse response) throws IOException {
+
+
+        String fileName = "university" + String.valueOf(uid) + "fog.jpg";
+        String filePath = "/home/rambot/Documents/MicroCampus_Spring/micro_campus_pictures/" + fileName;
+
+        File file = new File(filePath);
+
+        FileInputStream inputStream = new FileInputStream(file);
+        byte[] data = new byte[(int)file.length()];
+        int length = inputStream.read(data);
+        inputStream.close();
+
+        response.setContentType("image/png");
+
+        OutputStream stream = response.getOutputStream();
+        stream.write(data);
+        stream.flush();
+        stream.close();
+    }
+
+}

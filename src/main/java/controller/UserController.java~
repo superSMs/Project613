@@ -1,0 +1,100 @@
+package controller;
+
+
+import entity.*;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+@RestController
+public class UserController {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PreferenceRepository preferenceRepository;
+
+    @Autowired
+    private UserPreferenceRepository userPreferenceRepository;
+
+
+    @RequestMapping(value = "/user/login", method = RequestMethod.POST)
+    public User login(@RequestBody User user){
+        List<User> userList = userRepository.findByUsername(user.username);
+        User currentUser = userList.size()>0? userList.get(0) : null;
+        if(null == currentUser){
+            return null;
+        }
+
+        System.out.println(currentUser.password);
+        System.out.println(user.password);
+        if(!currentUser.password.equals(user.password)){
+            return null;
+        } else {
+            return currentUser;
+        }
+    }
+
+    @RequestMapping(value = "/user/register", method = RequestMethod.POST)
+    public User register(@RequestBody User user){
+        User currentUser = new User();
+
+        currentUser.username = user.username;
+        currentUser.name = user.name;
+        currentUser.password = user.password;
+//        currentUser.preference = user.preference;
+
+        return userRepository.save(currentUser);
+    }
+
+    @RequestMapping(value = "/user/", method = RequestMethod.GET)
+    public List<User> allUser(){
+        return userRepository.findAll();
+    }
+
+    @RequestMapping(value = "/userName/{uid}", method = RequestMethod.POST)
+    public String fetchUserName(@PathVariable Long uid){
+	User user = userRepository.findOne(uid);
+	return user.name;
+    }
+
+
+    //用户添加preference
+    @RequestMapping(value="/user/{uid}/addpreference/{preferenceType}", method= RequestMethod.GET)
+    public UserPreference addUserPrefrence(@PathVariable Long uid, @PathVariable String preferenceType){
+        User user = userRepository.findOne(uid);
+        if(null == user) return null;
+        List<Preference> preferenceList = preferenceRepository.findByType(Preference.Type.parse(preferenceType));
+        Preference p = preferenceList.size()>0 ? preferenceList.get(0):null;
+        if(null == p) return null;
+        List<UserPreference> userPreferences = userPreferenceRepository.findByUser(user);
+        for(UserPreference up : userPreferences){
+            if(up.preference.equals(p))
+                return null;
+        }
+        UserPreference userPreference = new UserPreference();
+        userPreference.user = user;
+        userPreference.preference = p;
+        return userPreferenceRepository.save(userPreference);
+
+    }
+
+    //获取用户的preference
+    @RequestMapping(value="/user/{uid}/preference", method= RequestMethod.GET)
+    public List<UserPreference> getUserPreferenceByUid(@PathVariable Long uid){
+        User user = userRepository.findOne(uid);
+        if(null == user) return null;
+        List<UserPreference> userPreferences = userPreferenceRepository.findByUser(user);
+        return userPreferences;
+    }
+
+
+
+}
